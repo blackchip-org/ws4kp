@@ -2,6 +2,7 @@ import { locationCleanup } from './utils/string.mjs';
 import { elemForEach } from './utils/elem.mjs';
 import getCurrentWeather from './currentweather.mjs';
 import { currentDisplay } from './navigation.mjs';
+import config from '../config.mjs';
 
 // constants
 const degree = String.fromCharCode(176);
@@ -51,10 +52,18 @@ const drawScreen = async () => {
 	drawCondition(screens[screenIndex](data));
 };
 
+const location = (data) => {
+	let loc = locationCleanup(data.station.properties.name).substr(0, 20);
+	if (config.cityOverrides[loc]) {
+		loc = config.cityOverrides[loc];
+	}
+	return loc;
+};
+
 // the "screens" are stored in an array for easy addition and removal
 const screens = [
 	// station name
-	(data) => `Conditions at ${locationCleanup(data.station.properties.name).substr(0, 20)}`,
+	(data) => `Conditions at ${location(data)}`,
 
 	// temperature
 	(data) => {

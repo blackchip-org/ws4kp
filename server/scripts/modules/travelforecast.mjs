@@ -73,7 +73,8 @@ class TravelForecast extends WeatherDisplay {
 		list.innerHTML = '';
 
 		// set up variables
-		const cities = this.data;
+		// const cities = this.data;
+		const cities = this.data.filter((city) => !city.error);
 
 		const lines = cities.map((city) => {
 			if (city.error) return false;

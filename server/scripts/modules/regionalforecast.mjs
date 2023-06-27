@@ -12,6 +12,7 @@ import WeatherDisplay from './weatherdisplay.mjs';
 import { registerDisplay } from './navigation.mjs';
 import * as utils from './regionalforecast-utils.mjs';
 import { getPoint } from './utils/weather.mjs';
+import config from '../config.mjs';
 
 class RegionalForecast extends WeatherDisplay {
 	constructor(navId, elemId) {
@@ -67,7 +68,8 @@ class RegionalForecast extends WeatherDisplay {
 					const distance = calcDistance(city.lon, city.lat, testCity.lon, testCity.lat);
 					return acc && distance >= targetDist;
 				}, true);
-				if (okToAddCity) regionalCities.push(city);
+				const addCity = config.addStations.includes(city.id);
+				if (okToAddCity || addCity) regionalCities.push(city);
 			}
 		});
 
@@ -84,6 +86,11 @@ class RegionalForecast extends WeatherDisplay {
 
 				// get XY on map for city
 				const cityXY = utils.getXYForCity(city, minMaxLatLon.maxLat, minMaxLatLon.minLon, weatherParameters.state);
+				const offset = config.offsets[city.id];
+				if (offset) {
+					cityXY.x += offset[0];
+					cityXY.y += offset[1];
+				}
 
 				// wait for the regional observation if it's not done yet
 				const observation = await observationPromise;
@@ -121,7 +128,18 @@ class RegionalForecast extends WeatherDisplay {
 		}));
 
 		// filter out any false (unavailable data)
-		const regionalData = regionalDataAll.filter((data) => data);
+		const regionalData = regionalDataAll.filter((data) => data)
+			.filter((item) => !config.removeCities.includes(item[0].name));
+
+		regionalData.forEach((region) => {
+			region.map((item) => {
+				const override = config.cityOverrides[item.name];
+				if (override) {
+					item.name = override;
+				}
+				return override;
+			});
+		});
 
 		// test for data present
 		if (regionalData.length === 0) {

@@ -2,10 +2,11 @@
 import { distance as calcDistance, directionToNSEW } from './utils/calc.mjs';
 import { json } from './utils/fetch.mjs';
 import STATUS from './status.mjs';
-import { locationCleanup } from './utils/string.mjs';
+// import { locationCleanup } from './utils/string.mjs';
 import { celsiusToFahrenheit, kphToMph } from './utils/units.mjs';
 import WeatherDisplay from './weatherdisplay.mjs';
 import { registerDisplay } from './navigation.mjs';
+import config from '../config.mjs';
 
 class LatestObservations extends WeatherDisplay {
 	constructor(navId, elemId) {
@@ -36,19 +37,24 @@ class LatestObservations extends WeatherDisplay {
 		const actualConditions = [];
 		let lastStation = Math.min(regionalStations.length, 7);
 		let firstStation = 0;
-		while (actualConditions.length < 7 && (lastStation) <= regionalStations.length) {
+		while (actualConditions.length < 14 && (lastStation) <= regionalStations.length) {
 			// eslint-disable-next-line no-await-in-loop
 			const someStations = await getStations(regionalStations.slice(firstStation, lastStation));
 
 			actualConditions.push(...someStations);
 			// update counters
 			firstStation += lastStation;
-			lastStation = Math.min(regionalStations.length + 1, firstStation + 7 - actualConditions.length);
+			lastStation = Math.min(regionalStations.length + 1, firstStation + 14 - actualConditions.length);
 		}
 
+		actualConditions.map((c) => {
+			const override = config.cityOverrides[c.city];
+			c.location = override || c.city;
+			return c;
+		});
 		// cut down to the maximum of 7
-		this.data = actualConditions.slice(0, this.MaximumRegionalStations);
-
+		// this.data = actualConditions.slice(0, this.MaximumRegionalStations);
+		this.data = actualConditions.filter((s) => config.latestObs.includes(s.StationId));
 		// test for at least one station
 		if (this.data.length === 0) {
 			this.setStatus(STATUS.noData);
@@ -62,8 +68,8 @@ class LatestObservations extends WeatherDisplay {
 		const conditions = this.data;
 
 		// sort array by station name
-		const sortedConditions = conditions.sort((a, b) => ((a.Name < b.Name) ? -1 : 1));
-
+		// const sortedConditions = conditions.sort((a, b) => ((a.Name < b.Name) ? -1 : 1));
+		const sortedConditions = conditions.sort((a, b) => ((a.location < b.location) ? -1 : 1));
 		this.elem.querySelector('.column-headers .temp.english').classList.add('show');
 		this.elem.querySelector('.column-headers .temp.metric').classList.remove('show');
 
@@ -74,7 +80,8 @@ class LatestObservations extends WeatherDisplay {
 			const WindSpeed = Math.round(kphToMph(condition.windSpeed.value));
 
 			const fill = {
-				location: locationCleanup(condition.city).substr(0, 14),
+				// location: locationCleanup(condition.city).substr(0, 14),
+				location: condition.location,
 				temp: Temperature,
 				weather: shortenCurrentConditions(condition.textDescription).substr(0, 9),
 			};

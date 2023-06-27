@@ -52,6 +52,7 @@ const getWeatherRegionalIconFromIconLink = (link, _isNightTime) => {
 
 	case 'ovc':
 	case 'ovc-n':
+	case 'smoke':
 		return addPath('Cloudy.gif');
 
 	case 'fog':

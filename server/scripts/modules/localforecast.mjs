@@ -10,7 +10,7 @@ class LocalForecast extends WeatherDisplay {
 		super(navId, elemId, 'Local Forecast', true);
 
 		// set timings
-		this.timing.baseDelay = 5000;
+		this.timing.baseDelay = 8000;
 	}
 
 	async getData(_weatherParameters) {

@@ -10,6 +10,7 @@ import { registerDisplay } from './navigation.mjs';
 import {
 	celsiusToFahrenheit, kphToMph, pascalToInHg, metersToFeet, kilometersToMiles,
 } from './utils/units.mjs';
+import config from '../config.mjs';
 
 // some stations prefixed do not provide all the necessary data
 const skipStations = ['U', 'C', 'H', 'W', 'Y', 'T', 'S', 'M', 'O', 'L', 'A', 'F', 'B', 'N', 'V', 'R', 'D', 'E', 'I', 'G', 'J'];
@@ -93,11 +94,16 @@ class CurrentWeather extends WeatherDisplay {
 			condition = shortConditions(condition);
 		}
 
+		let location = locationCleanup(this.data.station.properties.name).substr(0, 20);
+		if (config.cityOverrides[location]) {
+			location = config.cityOverrides[location];
+		}
+
 		const fill = {
 			temp: this.data.Temperature + String.fromCharCode(176),
 			condition,
 			wind: this.data.WindDirection.padEnd(3, '') + this.data.WindSpeed.toString().padStart(3, ' '),
-			location: locationCleanup(this.data.station.properties.name).substr(0, 20),
+			location,
 			humidity: `${this.data.Humidity}%`,
 			dewpoint: this.data.DewPoint + String.fromCharCode(176),
 			ceiling: (this.data.Ceiling === 0 ? 'Unlimited' : this.data.Ceiling + this.data.CeilingUnit),
